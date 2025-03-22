@@ -1,0 +1,363 @@
+/* Main Styles for Attendance Management System */
+
+:root {
+  --primary-color: #4a6fa5;
+  --primary-dark: #345381;
+  --primary-light: #7195c3;
+  --secondary-color: #f48c06;
+  --secondary-dark: #e85d04;
+  --secondary-light: #ffba08;
+  --success-color: #38b000;
+  --danger-color: #d00000;
+  --warning-color: #ffb700;
+  --background-light: #f8f9fa;
+  --text-dark: #212529;
+  --text-light: #f8f9fa;
+  --text-muted: #6c757d;
+  --border-color: #dee2e6;
+}
+
+/* General Styles */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-light);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+.container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--primary-dark);
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-secondary {
+  color: var(--secondary-color) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark);
+  border-color: var(--secondary-dark);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--text-dark);
+}
+
+/* Cards */
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-header {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  font-weight: 600;
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.card-footer {
+  background-color: var(--background-light);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: var(--text-light) !important;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: var(--text-light);
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+  color: var(--secondary-light);
+}
+
+.navbar-light .navbar-toggler {
+  border-color: var(--text-light);
+}
+
+/* Forms */
+.form-control:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 0.25rem rgba(74, 111, 165, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.form-text {
+  color: var(--text-muted);
+}
+
+/* Tables */
+.table {
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table thead {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(74, 111, 165, 0.1);
+}
+
+/* Attendance Status Indicators */
+.attendance-present {
+  color: var(--success-color);
+}
+
+.attendance-absent {
+  color: var(--danger-color);
+}
+
+.attendance-late {
+  color: var(--warning-color);
+}
+
+/* Attendance Percentage Indicator */
+.progress {
+  height: 0.8rem;
+  border-radius: 1rem;
+}
+
+.progress-bar-success {
+  background-color: var(--success-color);
+}
+
+.progress-bar-warning {
+  background-color: var(--warning-color);
+}
+
+.progress-bar-danger {
+  background-color: var(--danger-color);
+}
+
+/* Dashboard Stat Cards */
+.stat-card {
+  border-left: 5px solid var(--primary-color);
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-icon {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.stat-card-primary {
+  border-left-color: var(--primary-color);
+}
+
+.stat-card-secondary {
+  border-left-color: var(--secondary-color);
+}
+
+.stat-card-success {
+  border-left-color: var(--success-color);
+}
+
+.stat-card-danger {
+  border-left-color: var(--danger-color);
+}
+
+.stat-card-warning {
+  border-left-color: var(--warning-color);
+}
+
+/* OTP Display */
+.otp-display {
+  letter-spacing: 5px;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  color: var(--primary-dark);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.3rem;
+  }
+  .otp-display {
+    font-size: 1.5rem;
+  }
+}
+
+/* Login/Register Forms */
+.auth-form-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.auth-form {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Attendance Calendar */
+.calendar-day {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+}
+
+.calendar-day-present {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.calendar-day-absent {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.calendar-day-leave {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+/* Leave Request Status */
+.leave-pending {
+  background-color: #ffbd59;
+  color: #212529;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.leave-approved {
+  background-color: var(--success-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.leave-rejected {
+  background-color: var(--danger-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+/* Landing Page */
+.hero-section {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: var(--text-light);
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.feature-card {
+  border: none;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  height: 100%;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+/* Footer */
+.footer {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  padding: 2rem 0;
+  margin-top: 3rem;
+}
+
+.footer a {
+  color: var(--text-light);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--secondary-light);
+  text-decoration: underline;
+}

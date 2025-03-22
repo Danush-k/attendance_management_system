@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Courses - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Manage Courses</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Add Course Form -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Add New Course</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_courses') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.course_code.label }}</label>
+                            {{ form.course_code(class="form-control", placeholder="e.g., CS101") }}
+                            <div class="form-text">A unique code for the course</div>
+                            {% for error in form.course_code.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.title.label }}</label>
+                            {{ form.title(class="form-control", placeholder="e.g., Introduction to Computer Science") }}
+                            {% for error in form.title.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.schedule.label }}</label>
+                            {{ form.schedule(class="form-control", placeholder="e.g., Mon-Wed-Fri 10:00-11:00") }}
+                            {% for error in form.schedule.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.classroom.label }}</label>
+                            {{ form.classroom(class="form-control", placeholder="e.g., Room 101, Building A") }}
+                            {% for error in form.classroom.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.router_id.label }}</label>
+                            {{ form.router_id(class="form-select") }}
+                            <div class="form-text">Select the Wi-Fi router for this classroom</div>
+                            {% for error in form.router_id.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Wi-Fi Router Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Wi-Fi Router Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        Each classroom must be associated with a Wi-Fi router to validate student location during attendance marking.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Router ID is used to validate student location and should not be shared with students.
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Router ID</th>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for router in routers %}
+                                    <tr>
+                                        <td><code>{{ router.id }}</code></td>
+                                        <td>{{ router.name }}</td>
+                                        <td>{{ router.location }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Existing Courses -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Courses</h5>
+                </div>
+                <div class="card-body">
+                    {% if courses %}
+                        <div class="row">
+                            {% for course in courses %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span>{{ course.course_code }}</span>
+                                            <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-sm btn-outline-light">Manage</a>
+                                        </div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ course.title }}</h5>
+                                            <p class="mb-2">
+                                                <i class="fas fa-clock me-1"></i> {{ course.schedule }}
+                                            </p>
+                                            <p class="mb-2">
+                                                <i class="fas fa-map-marker-alt me-1"></i> {{ course.classroom }}
+                                            </p>
+                                            <p class="mb-2">
+                                                <i class="fas fa-wifi me-1"></i> Router: {{ course.router.name }} (ID: {{ course.router_id }})
+                                            </p>
+                                            <p class="mb-0">
+                                                <i class="fas fa-users me-1"></i> Students: {{ course.students|length }}
+                                            </p>
+                                        </div>
+                                        <div class="card-footer bg-white">
+                                            <div class="d-flex justify-content-between">
+                                                <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-users me-1"></i> Students
+                                                </a>
+                                                <a href="{{ url_for('attendance_report', course_id=course.id) }}" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-chart-bar me-1"></i> Reports
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> You don't have any courses yet. Use the form on the left to add your first course.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Course Management Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Course Management Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Student Enrollment:</strong> After creating a course, you need to enroll students from the course detail page.</li>
+                        <li><strong>Attendance Sessions:</strong> Create attendance sessions for each class meeting from the course detail page.</li>
+                        <li><strong>Wi-Fi Validation:</strong> Ensure the correct Wi-Fi router is assigned to your classroom location.</li>
+                        <li><strong>OTP Generation:</strong> Generate a new OTP for each class session when you are physically present in the classroom.</li>
+                        <li><strong>Reports:</strong> View detailed attendance reports for each course to identify students at risk of attendance shortfalls.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Reports - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Attendance Reports</h1>
+        </div>
+    </div>
+    
+    <!-- Course Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="mb-3">Select Course</h5>
+            <div class="row">
+                {% for course in courses %}
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('attendance_report', course_id=course.id) }}" class="text-decoration-none">
+                            <div class="card h-100 {% if selected_course and selected_course.id == course.id %}border-primary{% endif %}">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ course.course_code }}</h5>
+                                    <p class="card-text">{{ course.title }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% if selected_course %}
+        <!-- Overall Attendance Statistics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{{ selected_course.course_code }} - {{ selected_course.title }} Attendance Overview</h5>
+            </div>
+            <div class="card-body">
+                {% if students and sessions %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- Calculate overall statistics -->
+                            {% set total_possible = students|length * sessions|length %}
+                            {% set total_present = 0 %}
+                            {% for student_id, data in attendance_data.items() %}
+                                {% set total_present = total_present + data.total_present %}
+                            {% endfor %}
+                            {% set overall_rate = (total_present / total_possible * 100) if total_possible > 0 else 0 %}
+                            
+                            <div class="card text-center mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Overall Attendance Rate</h6>
+                                    <h2 class="card-title 
+                                        {% if overall_rate >= 75 %}
+                                            text-success
+                                        {% elif overall_rate >= 60 %}
+                                            text-warning
+                                        {% else %}
+                                            text-danger
+                                        {% endif %}">
+                                        {{ overall_rate|round(1) }}%
+                                    </h2>
+                                    <p class="card-text">
+                                        {{ total_present }} out of {{ total_possible }} possible attendances
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Session attendance rates -->
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Session Date</th>
+                                            <th>Attendance Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for session in sessions %}
+                                            {% set present_count = namespace(value=0) %}
+                                            {% for student in students %}
+                                                {% if attendance_data.get(student.id, {}).get('sessions', {}).get(session.id) == 'present' %}
+                                                    {% set present_count.value = present_count.value + 1 %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% set session_rate = (present_count.value / students|length * 100) if students|length > 0 else 0 %}
+                                            <tr>
+                                                <td>{{ session.date.strftime('%d-%m-%Y') }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                                            <div class="progress-bar 
+                                                                {% if session_rate >= 75 %}
+                                                                    bg-success
+                                                                {% elif session_rate >= 60 %}
+                                                                    bg-warning
+                                                                {% else %}
+                                                                    bg-danger
+                                                                {% endif %}"
+                                                                role="progressbar" 
+                                                                style="width: {{ session_rate }}%" 
+                                                                aria-valuenow="{{ session_rate }}" 
+                                                                aria-valuemin="0" 
+                                                                aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                        <span class="small">{{ session_rate|round(1) }}% ({{ present_count.value }}/{{ students|length }})</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Student attendance distribution graph -->
+                            {% set high_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 75)|list|length %}
+                            {% set medium_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 60 and attendance_data.get(id, {}).get('percentage', 0) < 75)|list|length %}
+                            {% set low_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) < 60)|list|length %}
+                            
+                            <h6>Student Attendance Distribution</h6>
+                            <div class="progress mb-2" style="height: 30px;">
+                                {% if students|length > 0 %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (high_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ high_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ high_count }} (≥75%)
+                                    </div>
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (medium_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ medium_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ medium_count }} (60-74%)
+                                    </div>
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (low_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ low_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ low_count }} (<60%)
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- At-risk students summary -->
+                            {% if low_count > 0 %}
+                                <div class="alert alert-danger mt-3">
+                                    <h6><i class="fas fa-exclamation-triangle me-2"></i> Students at Risk</h6>
+                                    <p>{{ low_count }} students are below the 60% attendance threshold and at severe risk of course failure.</p>
+                                </div>
+                            {% endif %}
+                            
+                            {% if medium_count > 0 %}
+                                <div class="alert alert-warning mt-3">
+                                    <h6><i class="fas fa-exclamation-circle me-2"></i> Students on Warning</h6>
+                                    <p>{{ medium_count }} students are between 60-74% attendance and need improvement to meet requirements.</p>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Attendance Summary</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Total Sessions
+                                            <span class="badge bg-primary rounded-pill">{{ sessions|length }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Total Students
+                                            <span class="badge bg-primary rounded-pill">{{ students|length }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Students Meeting Requirements (≥75%)
+                                            <span class="badge bg-success rounded-pill">{{ high_count }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Students at Risk (<60%)
+                                            <span class="badge bg-danger rounded-pill">{{ low_count }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Attendance data will be available once students are enrolled and sessions are created.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Detailed Student Attendance -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Detailed Student Attendance</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="window.print();">
+                    <i class="fas fa-print me-1"></i> Print Report
+                </button>
+            </div>
+            <div class="card-body">
+                {% if students and sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="align-middle">Student ID</th>
+                                    <th rowspan="2" class="align-middle">Name</th>
+                                    <th rowspan="2" class="align-middle">Percentage</th>
+                                    <th colspan="{{ sessions|length }}" class="text-center">Sessions</th>
+                                </tr>
+                                <tr>
+                                    {% for session in sessions %}
+                                        <th class="text-center small">{{ session.date.strftime('%d/%m') }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                    {% set data = attendance_data.get(student.id, {}) %}
+                                    <tr>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>{{ data.name }}</td>
+                                        <td class="text-center 
+                                            {% if data.percentage >= 75 %}
+                                                text-success
+                                            {% elif data.percentage >= 60 %}
+                                                text-warning
+                                            {% else %}
+                                                text-danger
+                                            {% endif %}">
+                                            <strong>{{ data.percentage }}%</strong>
+                                        </td>
+                                        {% for session in sessions %}
+                                            <td class="text-center">
+                                                {% if data.sessions.get(session.id) == 'present' %}
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i></span>
+                                                {% else %}
+                                                    <span class="text-danger"><i class="fas fa-times-circle"></i></span>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Detailed attendance data will be available once students are enrolled and sessions are created.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> Please select a course to view attendance reports.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

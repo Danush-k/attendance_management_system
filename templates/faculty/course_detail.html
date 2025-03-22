@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Course Detail: {{ course.course_code }} - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ course.course_code }} - {{ course.title }}</h1>
+            <p class="text-muted">
+                <i class="fas fa-clock me-1"></i> {{ course.schedule }} |
+                <i class="fas fa-map-marker-alt me-1"></i> {{ course.classroom }} |
+                <i class="fas fa-wifi me-1"></i> Router: {{ course.router.name }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('attendance_report', course_id=course.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-bar me-2"></i> Reports
+                </a>
+                <a href="{{ url_for('manage_courses') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Courses
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Course Sessions Management -->
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Class Sessions</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add Session Form -->
+                    <form method="POST" action="{{ url_for('course_detail', course_id=course.id) }}" class="mb-4">
+                        {{ session_form.hidden_tag() }}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ session_form.date.label }}</label>
+                                {{ session_form.date(class="form-control", type="date") }}
+                                {% for error in session_form.date.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ session_form.start_time.label }}</label>
+                                {{ session_form.start_time(class="form-control", type="time") }}
+                                {% for error in session_form.start_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ session_form.end_time.label }}</label>
+                                {{ session_form.end_time(class="form-control", type="time") }}
+                                {% for error in session_form.end_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">{{ session_form.topic.label }}</label>
+                                {{ session_form.topic(class="form-control", placeholder="Optional topic or description") }}
+                                {% for error in session_form.topic.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                {{ session_form.submit(class="btn btn-primary w-100") }}
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Session List -->
+                    {% if sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Topic</th>
+                                        <th>Status</th>
+                                        <th>Attendance</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions %}
+                                        {% set present_count = session.attendances|selectattr('status', 'equalto', 'present')|list|length %}
+                                        {% set total_students = students|length %}
+                                        {% set attendance_rate = (present_count / total_students * 100) if total_students > 0 else 0 %}
+                                        <tr id="session-{{ session.id }}">
+                                            <td>{{ session.date.strftime('%d-%m-%Y') }}</td>
+                                            <td>{{ session.start_time.strftime('%H:%M') }} - {{ session.end_time.strftime('%H:%M') }}</td>
+                                            <td>{{ session.topic or '-' }}</td>
+                                            <td class="session-status">
+                                                {% if session.status == 'scheduled' %}
+                                                    <span class="badge bg-primary">Scheduled</span>
+                                                {% elif session.status == 'ongoing' %}
+                                                    <span class="badge bg-success">Ongoing</span>
+                                                {% elif session.status == 'completed' %}
+                                                    <span class="badge bg-info">Completed</span>
+                                                {% elif session.status == 'cancelled' %}
+                                                    <span class="badge bg-secondary">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                                        <div class="progress-bar 
+                                                            {% if attendance_rate >= 75 %}
+                                                                bg-success
+                                                            {% elif attendance_rate >= 60 %}
+                                                                bg-warning
+                                                            {% else %}
+                                                                bg-danger
+                                                            {% endif %}"
+                                                            role="progressbar" 
+                                                            style="width: {{ attendance_rate }}%" 
+                                                            aria-valuenow="{{ attendance_rate }}" 
+                                                            aria-valuemin="0" 
+                                                            aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <span class="small">{{ present_count }}/{{ total_students }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="session-actions">
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('generate_otp', session_id=session.id) }}" class="btn btn-outline-primary" title="Generate OTP">
+                                                        <i class="fas fa-key"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-secondary cancel-class" data-session-id="{{ session.id }}" title="Cancel Class" {% if session.status == 'cancelled' %}disabled{% endif %}>
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No sessions created yet. Use the form above to schedule your first class session.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- OTP Generation Instructions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Attendance Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Create a session for each class meeting using the form above.</li>
+                        <li>During class, navigate to the session and click the key icon to generate an OTP.</li>
+                        <li>You must be physically present in the classroom (connected to the correct Wi-Fi) to generate an OTP.</li>
+                        <li>Share the generated OTP with students, who must also be physically present.</li>
+                        <li>Students must enter the OTP within the time limit (15 minutes) to mark attendance.</li>
+                        <li>If class is cancelled, click the X icon to automatically mark all students present.</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> OTPs expire after 15 minutes for security reasons.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Student Enrollment and Attendance -->
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Enrolled Students</h5>
+                    <span class="badge bg-primary">{{ students|length }} Students</span>
+                </div>
+                <div class="card-body">
+                    {% if students %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Attendance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                        {% set data = attendance_data.get(student.id, {}) %}
+                                        <tr>
+                                            <td>{{ student.student_id }}</td>
+                                            <td>{{ student.user.first_name }} {{ student.user.last_name }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                                        <div class="progress-bar 
+                                                            {% if data.percentage >= 75 %}
+                                                                bg-success
+                                                            {% elif data.percentage >= 60 %}
+                                                                bg-warning
+                                                            {% else %}
+                                                                bg-danger
+                                                            {% endif %}"
+                                                            role="progressbar" 
+                                                            style="width: {{ data.percentage }}%" 
+                                                            aria-valuenow="{{ data.percentage }}" 
+                                                            aria-valuemin="0" 
+                                                            aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <span class="small">{{ data.percentage }}%</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if data.percentage < 75 %}
+                                                    <span class="badge bg-danger">At Risk</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Good</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No students enrolled in this course yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Student Attendance Summary</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Attendance Stats -->
+                    {% if students and sessions %}
+                        <!-- Calculate overall course attendance -->
+                        {% set total_possible = students|length * sessions|length %}
+                        {% set total_present = 0 %}
+                        {% for student in students %}
+                            {% set total_present = total_present + attendance_data.get(student.id, {}).get('present', 0) %}
+                        {% endfor %}
+                        {% set course_rate = (total_present / total_possible * 100) if total_possible > 0 else 0 %}
+                        
+                        <div class="text-center mb-4">
+                            <div class="display-6 mb-2">{{ course_rate|round(1) }}%</div>
+                            <p class="text-muted">Overall Course Attendance</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6>Attendance Distribution</h6>
+                            {% set high_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 75)|list|length %}
+                            {% set medium_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 60 and attendance_data.get(id, {}).get('percentage', 0) < 75)|list|length %}
+                            {% set low_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) < 60)|list|length %}
+                            
+                            <div class="progress mb-2" style="height: 20px;">
+                                {% if students|length > 0 %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (high_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ high_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ high_count }}
+                                    </div>
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (medium_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ medium_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ medium_count }}
+                                    </div>
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (low_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ low_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
+                                        {{ low_count }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between small">
+                                <span><i class="fas fa-circle text-success me-1"></i> Good (≥75%): {{ high_count }}</span>
+                                <span><i class="fas fa-circle text-warning me-1"></i> Warning (60-74%): {{ medium_count }}</span>
+                                <span><i class="fas fa-circle text-danger me-1"></i> At Risk (<60%): {{ low_count }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i> {{ low_count }} students are at risk of falling below the required attendance threshold.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Attendance summary will be available once students are enrolled and sessions are created.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

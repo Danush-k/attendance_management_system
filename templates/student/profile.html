@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Student Profile - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Your Profile</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('student_profile') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" value="{{ student.user.first_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" value="{{ student.user.last_name }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" value="{{ student.user.email }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Student ID</label>
+                                <input type="text" class="form-control" value="{{ student.student_id }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.department.label }}</label>
+                                {{ form.department(class="form-control") }}
+                                {% for error in form.department.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.year.label }}</label>
+                                {{ form.year(class="form-control") }}
+                                {% for error in form.year.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.phone.label }}</label>
+                            {{ form.phone(class="form-control") }}
+                            {% for error in form.phone.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Enrolled Courses</h3>
+                </div>
+                <div class="card-body">
+                    {% if student.courses %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Course Code</th>
+                                        <th>Title</th>
+                                        <th>Instructor</th>
+                                        <th>Schedule</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in student.courses %}
+                                        <tr>
+                                            <td>{{ course.course_code }}</td>
+                                            <td>{{ course.title }}</td>
+                                            <td>{{ course.faculty.user.first_name }} {{ course.faculty.user.last_name }}</td>
+                                            <td>{{ course.schedule }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">You are not enrolled in any courses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

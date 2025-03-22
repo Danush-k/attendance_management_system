@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-4">Welcome, {{ student.user.first_name }}!</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('mark_attendance') }}" class="btn btn-primary">
+                    <i class="fas fa-check-circle me-2"></i> Mark Attendance
+                </a>
+                <a href="{{ url_for('leave_request') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-envelope me-2"></i> Request Leave
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Overview Cards -->
+    <div class="row mt-4">
+        {% for course in courses %}
+            {% set stats = attendance_stats.get(course.course_code, {}) %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>{{ course.course_code }}</span>
+                        <a href="{{ url_for('student_attendance', course_id=course.id) }}" class="btn btn-sm btn-outline-light">Details</a>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ course.title }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">Instructor: {{ course.faculty.user.first_name }} {{ course.faculty.user.last_name }}</small>
+                        </p>
+                        
+                        <div class="attendance-stats">
+                            <h6>Attendance: {{ stats.percentage }}%</h6>
+                            <div class="progress mb-3">
+                                <div class="progress-bar 
+                                    {% if stats.percentage >= 75 %}
+                                        bg-success
+                                    {% elif stats.percentage >= 60 %}
+                                        bg-warning
+                                    {% else %}
+                                        bg-danger
+                                    {% endif %}"
+                                    role="progressbar" 
+                                    style="width: {{ stats.percentage }}%" 
+                                    aria-valuenow="{{ stats.percentage }}" 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100">
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <span>Present: {{ stats.attended }}/{{ stats.total }}</span>
+                                {% if stats.percentage < 75 %}
+                                    <span class="text-danger">Warning!</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i> {{ course.schedule }}
+                            <br>
+                            <i class="fas fa-map-marker-alt me-1"></i> {{ course.classroom }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Recent Activity and Charts -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Attendance</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_attendance %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Course</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendance in recent_attendance %}
+                                        <tr>
+                                            <td>{{ attendance.session.date.strftime('%d-%m-%Y') }}</td>
+                                            <td>{{ attendance.session.course.course_code }}</td>
+                                            <td>
+                                                {% if attendance.status == 'present' %}
+                                                    <span class="badge bg-success">Present</span>
+                                                {% elif attendance.status == 'absent' %}
+                                                    <span class="badge bg-danger">Absent</span>
+                                                {% elif attendance.status == 'late' %}
+                                                    <span class="badge bg-warning">Late</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No recent attendance records</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if pending_leaves %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Pending Leave Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Dates</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in pending_leaves %}
+                                        <tr>
+                                            <td>{{ leave.course.course_code }}</td>
+                                            <td>{{ leave.start_date.strftime('%d-%m-%Y') }} to {{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                            <td><span class="leave-pending">Pending</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Attendance Overview</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Calculate total attendance across all courses -->
+                    {% set total_present = 0 %}
+                    {% set total_absent = 0 %}
+                    {% set total_sessions = 0 %}
+                    
+                    {% for course_code, stats in attendance_stats.items() %}
+                        {% set total_present = total_present + stats.attended %}
+                        {% set total_absent = total_absent + (stats.total - stats.attended) %}
+                        {% set total_sessions = total_sessions + stats.total %}
+                    {% endfor %}
+                    
+                    <!-- Attendance Chart -->
+                    <div style="height: 250px;">
+                        <canvas id="attendance-overview-chart" 
+                                data-present="{{ total_present }}" 
+                                data-absent="{{ total_absent }}" 
+                                data-late="0">
+                        </canvas>
+                    </div>
+                    
+                    <!-- Overall Stats -->
+                    <div class="row mt-3 text-center">
+                        <div class="col-4">
+                            <div class="attendance-present">
+                                <h3>{{ total_present }}</h3>
+                                <p class="mb-0">Present</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="attendance-absent">
+                                <h3>{{ total_absent }}</h3>
+                                <p class="mb-0">Absent</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div>
+                                <h3>{{ total_sessions }}</h3>
+                                <p class="mb-0">Total</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Upcoming Classes</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for course in courses %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ course.course_code }} - {{ course.title }}</h6>
+                                    <small>{{ course.schedule }}</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ course.classroom }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mock data for trend chart
+    document.addEventListener('DOMContentLoaded', function() {
+        const trendData = [
+            { month: 'Jan', percentage: 85 },
+            { month: 'Feb', percentage: 82 },
+            { month: 'Mar', percentage: 78 },
+            { month: 'Apr', percentage: 80 },
+            { month: 'May', percentage: 75 }
+        ];
+        
+        const trendChart = document.getElementById('attendance-trend-chart');
+        if(trendChart) {
+            trendChart.setAttribute('data-trend', JSON.stringify(trendData));
+        }
+    });
+</script>
+{% endblock %}

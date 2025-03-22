@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Student Attendance - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Attendance Records</h1>
+            
+            <!-- Course Selection -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Select Course</h5>
+                    <div class="row">
+                        {% for course in courses %}
+                            <div class="col-md-4 mb-3">
+                                <a href="{{ url_for('student_attendance', course_id=course.id) }}" class="text-decoration-none">
+                                    <div class="card h-100 {% if selected_course and selected_course.id == course.id %}border-primary{% endif %}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ course.course_code }}</h5>
+                                            <p class="card-text">{{ course.title }}</p>
+                                            <p class="card-text"><small class="text-muted">{{ course.schedule }}</small></p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if selected_course %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Attendance for {{ selected_course.course_code }} - {{ selected_course.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if sessions %}
+                            <!-- Attendance Summary -->
+                            {% set present_count = 0 %}
+                            {% for session in sessions %}
+                                {% if attendance_records.get(session.id) and attendance_records.get(session.id).status == 'present' %}
+                                    {% set present_count = present_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% set percentage = (present_count / sessions|length * 100) if sessions|length > 0 else 0 %}
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-8">
+                                    <h5>Attendance Summary</h5>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar 
+                                            {% if percentage >= 75 %}
+                                                bg-success
+                                            {% elif percentage >= 60 %}
+                                                bg-warning
+                                            {% else %}
+                                                bg-danger
+                                            {% endif %}"
+                                            role="progressbar" 
+                                            style="width: {{ percentage }}%" 
+                                            aria-valuenow="{{ percentage }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                            {{ percentage|round(2) }}%
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Present: {{ present_count }}/{{ sessions|length }}</span>
+                                        <span>Absent: {{ sessions|length - present_count }}/{{ sessions|length }}</span>
+                                        {% if percentage < 75 %}
+                                            <span class="text-danger">Below required threshold (75%)</span>
+                                        {% else %}
+                                            <span class="text-success">Above required threshold (75%)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="p-3 rounded 
+                                        {% if percentage >= 75 %}
+                                            bg-success text-white
+                                        {% elif percentage >= 60 %}
+                                            bg-warning
+                                        {% else %}
+                                            bg-danger text-white
+                                        {% endif %}">
+                                        <h3 class="mb-0">{{ percentage|round(2) }}%</h3>
+                                        <p class="mb-0">Overall Attendance</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Attendance Records Table -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Topic</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for session in sessions %}
+                                            <tr>
+                                                <td>{{ session.date.strftime('%d-%m-%Y') }}</td>
+                                                <td>{{ session.topic or 'N/A' }}</td>
+                                                <td>{{ session.start_time.strftime('%H:%M') }} - {{ session.end_time.strftime('%H:%M') }}</td>
+                                                <td>
+                                                    {% if session.status == 'cancelled' %}
+                                                        <span class="badge bg-secondary">Class Cancelled</span>
+                                                    {% elif attendance_records.get(session.id) %}
+                                                        {% if attendance_records.get(session.id).status == 'present' %}
+                                                            <span class="badge bg-success">Present</span>
+                                                        {% elif attendance_records.get(session.id).status == 'absent' %}
+                                                            <span class="badge bg-danger">Absent</span>
+                                                        {% elif attendance_records.get(session.id).status == 'late' %}
+                                                            <span class="badge bg-warning">Late</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Absent</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if attendance_records.get(session.id) and attendance_records.get(session.id).notes %}
+                                                        {{ attendance_records.get(session.id).notes }}
+                                                    {% elif session.status == 'cancelled' %}
+                                                        Class was cancelled by instructor
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Attendance Calendar View -->
+                            <div class="mt-4">
+                                <h5>Attendance Calendar</h5>
+                                <div class="d-flex flex-wrap">
+                                    {% for session in sessions %}
+                                        <div class="calendar-day 
+                                            {% if session.status == 'cancelled' %}
+                                                bg-secondary text-white
+                                            {% elif attendance_records.get(session.id) and attendance_records.get(session.id).status == 'present' %}
+                                                calendar-day-present
+                                            {% else %}
+                                                calendar-day-absent
+                                            {% endif %}"
+                                            data-bs-toggle="tooltip"
+                                            title="{{ session.date.strftime('%d-%m-%Y') }} - {{ 'Present' if attendance_records.get(session.id) and attendance_records.get(session.id).status == 'present' else 'Absent' }}">
+                                            {{ session.date.strftime('%d') }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> No sessions have been recorded for this course yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Please select a course to view attendance records.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips for calendar days
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

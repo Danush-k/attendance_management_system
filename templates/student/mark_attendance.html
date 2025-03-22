@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Mark Attendance</h2>
+                </div>
+                <div class="card-body">
+                    {% if active_sessions %}
+                        <!-- Location validation status message -->
+                        <div id="location-status">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> Please select a course to validate your location.
+                            </div>
+                        </div>
+                        
+                        <!-- Select Course -->
+                        <div class="mb-4">
+                            <label class="form-label">Select Course</label>
+                            <select id="course-select" class="form-select">
+                                <option value="">-- Select Course --</option>
+                                {% for session in active_sessions %}
+                                    <option value="{{ session.course.id }}" data-router-id="{{ session.course.router_id }}">
+                                        {{ session.course.course_code }} - {{ session.course.title }} ({{ session.session.date.strftime('%d-%m-%Y') }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- OTP Entry Form -->
+                        <form id="mark-attendance-form" method="POST" action="{{ url_for('mark_attendance') }}">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.otp.label }}</label>
+                                {{ form.otp(class="form-control", placeholder="Enter 6-digit OTP") }}
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i> Enter the OTP provided by your instructor.
+                                </div>
+                                {% for error in form.otp.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            {{ form.router_id(id="router_id") }}
+                            
+                            <div class="d-grid gap-2">
+                                {{ form.submit(class="btn btn-primary btn-lg", id="submit-attendance", disabled="disabled") }}
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> There are no active attendance sessions at the moment.
+                        </div>
+                        <p class="mb-3">
+                            Attendance can only be marked when:
+                        </p>
+                        <ul>
+                            <li>Your instructor has started an attendance session</li>
+                            <li>You are physically present in the classroom</li>
+                            <li>You are connected to the classroom's Wi-Fi network</li>
+                            <li>You have not already marked attendance for this session</li>
+                        </ul>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-primary">Return to Dashboard</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if active_sessions %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">Active Sessions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Topic</th>
+                                        <th>OTP Expires</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in active_sessions %}
+                                        <tr>
+                                            <td>{{ session.course.course_code }}</td>
+                                            <td>{{ session.session.date.strftime('%d-%m-%Y') }}</td>
+                                            <td>{{ session.session.start_time.strftime('%H:%M') }} - {{ session.session.end_time.strftime('%H:%M') }}</td>
+                                            <td>{{ session.session.topic or 'N/A' }}</td>
+                                            <td>
+                                                {% set remaining = (session.otp.expiration - now).total_seconds() // 60 %}
+                                                {% if remaining > 0 %}
+                                                    <span class="text-success">{{ remaining|int }} minutes</span>
+                                                {% else %}
+                                                    <span class="text-danger">Expiring soon!</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Instructions</h3>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Make sure you are physically present in the classroom.</li>
+                        <li>Connect to the classroom's Wi-Fi network.</li>
+                        <li>Select your course from the dropdown menu.</li>
+                        <li>Wait for your location to be verified.</li>
+                        <li>Enter the OTP provided by your instructor.</li>
+                        <li>Click "Mark Attendance" to register your presence.</li>
+                    </ol>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Attendance can only be marked once per session, and only when you are physically present in the class.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

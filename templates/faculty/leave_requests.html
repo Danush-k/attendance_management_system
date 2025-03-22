@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Requests - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Leave Requests</h1>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">All Leave Requests</h5>
+        </div>
+        <div class="card-body">
+            {% if leave_requests %}
+                <!-- Leave Requests Tabs -->
+                <ul class="nav nav-tabs mb-4" id="leaveRequestTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
+                            Pending 
+                            <span class="badge bg-primary ms-1">{{ leave_requests|selectattr('status', 'equalto', 'pending')|list|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab" aria-controls="approved" aria-selected="false">
+                            Approved
+                            <span class="badge bg-success ms-1">{{ leave_requests|selectattr('status', 'equalto', 'approved')|list|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false">
+                            Rejected
+                            <span class="badge bg-danger ms-1">{{ leave_requests|selectattr('status', 'equalto', 'rejected')|list|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="false">
+                            All
+                            <span class="badge bg-secondary ms-1">{{ leave_requests|length }}</span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="leaveRequestTabContent">
+                    <!-- Pending Requests -->
+                    <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                        {% set pending_requests = leave_requests|selectattr('status', 'equalto', 'pending')|list %}
+                        {% if pending_requests %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Course</th>
+                                            <th>Period</th>
+                                            <th>Reason</th>
+                                            <th>Submitted</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for leave in pending_requests %}
+                                            <tr id="leave-request-{{ leave.id }}">
+                                                <td>{{ leave.student.user.first_name }} {{ leave.student.user.last_name }} ({{ leave.student.student_id }})</td>
+                                                <td>{{ leave.course.course_code }}</td>
+                                                <td>{{ leave.start_date.strftime('%d-%m-%Y') }} to {{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                                <td>
+                                                    <span data-bs-toggle="tooltip" title="{{ leave.reason }}">
+                                                        {{ leave.reason|truncate(50) }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ leave.created_at.strftime('%d-%m-%Y') }}</td>
+                                                <td class="leave-status"><span class="leave-pending">Pending</span></td>
+                                                <td class="leave-actions">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-success approve-leave" data-request-id="{{ leave.id }}">
+                                                            <i class="fas fa-check me-1"></i> Approve
+                                                        </button>
+                                                        <button class="btn btn-danger reject-leave" data-request-id="{{ leave.id }}">
+                                                            <i class="fas fa-times me-1"></i> Reject
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> No pending leave requests.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Approved Requests -->
+                    <div class="tab-pane fade" id="approved" role="tabpanel" aria-labelledby="approved-tab">
+                        {% set approved_requests = leave_requests|selectattr('status', 'equalto', 'approved')|list %}
+                        {% if approved_requests %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Course</th>
+                                            <th>Period</th>
+                                            <th>Reason</th>
+                                            <th>Submitted</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for leave in approved_requests %}
+                                            <tr>
+                                                <td>{{ leave.student.user.first_name }} {{ leave.student.user.last_name }} ({{ leave.student.student_id }})</td>
+                                                <td>{{ leave.course.course_code }}</td>
+                                                <td>{{ leave.start_date.strftime('%d-%m-%Y') }} to {{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                                <td>
+                                                    <span data-bs-toggle="tooltip" title="{{ leave.reason }}">
+                                                        {{ leave.reason|truncate(50) }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ leave.created_at.strftime('%d-%m-%Y') }}</td>
+                                                <td><span class="leave-approved">Approved</span></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> No approved leave requests.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Rejected Requests -->
+                    <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
+                        {% set rejected_requests = leave_requests|selectattr('status', 'equalto', 'rejected')|list %}
+                        {% if rejected_requests %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Course</th>
+                                            <th>Period</th>
+                                            <th>Reason</th>
+                                            <th>Submitted</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for leave in rejected_requests %}
+                                            <tr>
+                                                <td>{{ leave.student.user.first_name }} {{ leave.student.user.last_name }} ({{ leave.student.student_id }})</td>
+                                                <td>{{ leave.course.course_code }}</td>
+                                                <td>{{ leave.start_date.strftime('%d-%m-%Y') }} to {{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                                <td>
+                                                    <span data-bs-toggle="tooltip" title="{{ leave.reason }}">
+                                                        {{ leave.reason|truncate(50) }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ leave.created_at.strftime('%d-%m-%Y') }}</td>
+                                                <td><span class="leave-rejected">Rejected</span></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> No rejected leave requests.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- All Requests -->
+                    <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Course</th>
+                                        <th>Period</th>
+                                        <th>Reason</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_requests %}
+                                        <tr id="leave-request-{{ leave.id }}">
+                                            <td>{{ leave.student.user.first_name }} {{ leave.student.user.last_name }} ({{ leave.student.student_id }})</td>
+                                            <td>{{ leave.course.course_code }}</td>
+                                            <td>{{ leave.start_date.strftime('%d-%m-%Y') }} to {{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                            <td>
+                                                <span data-bs-toggle="tooltip" title="{{ leave.reason }}">
+                                                    {{ leave.reason|truncate(50) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ leave.created_at.strftime('%d-%m-%Y') }}</td>
+                                            <td class="leave-status">
+                                                {% if leave.status == 'pending' %}
+                                                    <span class="leave-pending">Pending</span>
+                                                {% elif leave.status == 'approved' %}
+                                                    <span class="leave-approved">Approved</span>
+                                                {% elif leave.status == 'rejected' %}
+                                                    <span class="leave-rejected">Rejected</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="leave-actions">
+                                                {% if leave.status == 'pending' %}
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-success approve-leave" data-request-id="{{ leave.id }}">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                        <button class="btn btn-danger reject-leave" data-request-id="{{ leave.id }}">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                {% else %}
+                                                    Processed
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No leave requests have been submitted yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Leave Request Guidelines</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Approval Criteria</h6>
+                    <ul>
+                        <li><strong>Medical Leaves:</strong> Verify that supporting documentation is mentioned or will be provided.</li>
+                        <li><strong>Personal Leaves:</strong> Evaluate the importance and necessity of the request.</li>
+                        <li><strong>Academic Events:</strong> Verify the event details and relevance to the student's coursework.</li>
+                        <li><strong>Religious Observances:</strong> These should generally be approved as part of diversity and inclusion policies.</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Effect of Approval</h6>
+                    <ul>
+                        <li>Approved leave requests mark the student as "present" for all sessions during the leave period.</li>
+                        <li>These attendances are marked with a note indicating they were due to approved leave.</li>
+                        <li>Approved absences do not count against the student's required attendance percentage.</li>
+                        <li>Students are still responsible for any coursework missed during their leave period.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i> When a leave request is approved, attendance is automatically marked for all sessions during the leave period. This can be overridden manually if needed.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

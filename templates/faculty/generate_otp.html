@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Generate OTP - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Generate Attendance OTP</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="mb-3">Session Details</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Course:</span>
+                                <strong>{{ course.course_code }} - {{ course.title }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Date:</span>
+                                <strong>{{ session.date.strftime('%d-%m-%Y') }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Time:</span>
+                                <strong>{{ session.start_time.strftime('%H:%M') }} - {{ session.end_time.strftime('%H:%M') }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Location:</span>
+                                <strong>{{ course.classroom }} (Router: {{ course.router.name }})</strong>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- OTP Display (if already generated) -->
+                    {% set existing_otp = session.otps|selectattr('is_active', 'equalto', True)|first %}
+                    {% if existing_otp %}
+                        <div class="mb-4">
+                            <h5 class="mb-3">Active OTP</h5>
+                            <div class="otp-display" id="otp-display">{{ existing_otp.otp }}</div>
+                            <p class="text-center" id="otp-expiry" data-expiry="{{ existing_otp.expiration }}">
+                                OTP expires at {{ existing_otp.expiration.strftime('%H:%M:%S') }}
+                            </p>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Share this OTP with your students. They must be present in the classroom to mark attendance.
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="btn btn-primary" onclick="document.getElementById('generate-otp-form').submit();">
+                                <i class="fas fa-sync-alt me-2"></i> Generate New OTP
+                            </button>
+                        </div>
+                    {% else %}
+                        <!-- Location Validation Form -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">Location Verification</h5>
+                            <p>
+                                To generate an OTP, you must be physically present in the classroom and connected to the classroom's Wi-Fi network.
+                            </p>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> The system will validate your location using the classroom's Wi-Fi router ID.
+                            </div>
+                        </div>
+                        
+                        <form id="generate-otp-form" method="POST" action="{{ url_for('generate_otp', session_id=session.id) }}">
+                            {{ form.hidden_tag() }}
+                            {{ form.router_id(value=course.router_id) }}
+                            
+                            <div class="d-grid gap-2">
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Course
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="mb-0">OTP Instructions</h3>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Make sure you are in the correct classroom and connected to the classroom's Wi-Fi network.</li>
+                        <li>Click "Generate OTP" to create a unique OTP for this session.</li>
+                        <li>Share the OTP with your students, who must also be in the classroom.</li>
+                        <li>Students will enter this OTP to mark their attendance.</li>
+                        <li>The OTP will expire after 15 minutes for security reasons.</li>
+                        <li>You can generate a new OTP if needed (e.g., if the previous one expired).</li>
+                    </ol>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Students can only mark attendance if they are physically present in the classroom and connected to the same Wi-Fi network.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
