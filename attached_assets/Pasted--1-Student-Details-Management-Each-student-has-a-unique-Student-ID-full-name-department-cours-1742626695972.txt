@@ -1,0 +1,43 @@
+	1.	Student Details Management
+	•	Each student has a unique Student ID, full name, department, course information, year of study, and contact details (email, phone).
+	2.	Course and Faculty Information
+	•	Course details include course code, title, instructor, schedule, and classroom location.
+	•	Faculty members have secure login credentials to manage attendance.
+	•	While creating a course, faculty must input the router ID based on the classroom location.
+	•	The router ID should not be visible to students to prevent manipulation.
+	3.	Attendance Data Recording
+	•	Attendance should be marked by students only when they are within the designated Wi-Fi router ID zone.
+	•	The attendance marking page for students should open only when they are in the router zone.
+	•	The teacher must also be within the router zone to enable OTP generation for attendance marking.
+	•	Each student receives a unique OTP, which must be entered to mark attendance.
+	•	If the teacher cancels the class, attendance is automatically granted to all students for that session.
+	4.	Faculty Input and Control
+	•	Only faculty can modify attendance records and add notes on class behavior or attendance exceptions.
+	5.	Student Access and Requests
+	•	Students can view their attendance, request clarifications, and submit absence requests (medical leave, personal reasons).
+	•	Faculty verify absence requests before approval.
+	6.	Attendance Rules Enforcement
+	•	A minimum attendance percentage (e.g., 75%) is required for course completion.
+	•	Rules define late arrivals, excused vs. unexcused absences, and associated penalties.
+	7.	Automated Attendance Calculation
+	•	Attendance percentage is calculated dynamically, considering excused absences and late arrivals.
+	•	System flags students nearing attendance limits and enforces predefined rules.
+	8.	Notifications and Alerts
+	•	Students receive warnings if attendance falls below a threshold (e.g., 75%).
+	•	Faculty receive alerts for unexplained absences or unusual attendance trends.
+	9.	Report Generation and Analytics
+	•	System generates detailed reports (individual student, course-level, or administrative).
+	•	Reports include overall attendance percentage, absent and late days, and compliance tracking.
+	10.	Integration with Academic Calendar
+
+	•	System tracks holidays, exam schedules, and special academic events, adjusting attendance records accordingly.
+
+	11.	Security and Data Integrity
+
+	•	Unauthorized access or modification of attendance records is strictly prevented.
+	•	Students can only view their own records; faculty have exclusive control over attendance modifications.
+
+	12.	Handling Special Cases
+
+	•	System accommodates medical leave, official events, disability-based accommodations, and temporary faculty absences.
+	•	Flags students exceeding absence limits for intervention or disciplinary actions.
