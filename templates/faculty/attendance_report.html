@@ -117,10 +117,6 @@
                         </div>
                         <div class="col-md-6">
                             <!-- Student attendance distribution graph -->
-                            {% set high_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 75)|list|length %}
-                            {% set medium_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 60 and attendance_data.get(id, {}).get('percentage', 0) < 75)|list|length %}
-                            {% set low_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) < 60)|list|length %}
-                            
                             <h6>Student Attendance Distribution</h6>
                             <div class="progress mb-2" style="height: 30px;">
                                 {% if students|length > 0 %}

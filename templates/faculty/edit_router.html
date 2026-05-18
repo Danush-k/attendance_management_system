@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Edit Router</h2>
+
+    <!-- Display flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Edit Router Form -->
+    <form method="POST" action="{{ url_for('edit_router', router_id=router.id) }}">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            <label for="{{ form.name.id }}" class="form-label">Router Name</label>
+            {{ form.name(class="form-control") }}
+            {% if form.name.errors %}
+                {% for error in form.name.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.location.id }}" class="form-label">Location</label>
+            {{ form.location(class="form-control") }}
+            {% if form.location.errors %}
+                {% for error in form.location.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.mac_address.id }}" class="form-label">IP Address (Optional)</label>
+            {{ form.mac_address(class="form-control") }}
+            {% if form.mac_address.errors %}
+                {% for error in form.mac_address.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('add_router_route') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

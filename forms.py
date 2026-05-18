@@ -69,7 +69,7 @@ class OTPForm(FlaskForm):
 
 class MarkAttendanceForm(FlaskForm):
     otp = StringField('Enter OTP', validators=[DataRequired(), Length(min=6, max=6)])
-    router_id = HiddenField('Router ID')
+    router_id = HiddenField('Router ID', validators=[DataRequired()])
     submit = SubmitField('Mark Attendance')
 
 class LeaveRequestForm(FlaskForm):

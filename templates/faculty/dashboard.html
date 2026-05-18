@@ -13,6 +13,9 @@
                 <a href="{{ url_for('manage_courses') }}" class="btn btn-primary">
                     <i class="fas fa-plus-circle me-2"></i> Add Course
                 </a>
+                <a href="{{ url_for('add_router_route') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-router me-2"></i> Add Router
+                </a>
                 <a href="{{ url_for('attendance_report') }}" class="btn btn-outline-primary">
                     <i class="fas fa-chart-bar me-2"></i> Reports
                 </a>
@@ -23,7 +26,7 @@
     <!-- Course Stats Cards -->
     <div class="row mt-4">
         {% for course in courses %}
-            {% set stats = course_stats.get(course.id, {}) %}
+            {% set stats = course_stats.get(course.id, {'student_count': 0, 'attendance_rate': 0}) %}
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -39,30 +42,33 @@
                         <div class="mt-3">
                             <div class="d-flex justify-content-between mb-1">
                                 <span>Students:</span>
-                                <span>{{ stats.student_count }}</span>
+                                <span>{{ stats['student_count'] }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-1">
                                 <span>Avg. Attendance:</span>
                                 <span 
-                                    class="{% if stats.attendance_rate >= 75 %}text-success{% elif stats.attendance_rate >= 60 %}text-warning{% else %}text-danger{% endif %}">
-                                    {{ stats.attendance_rate }}%
+                                    class="{% if stats['attendance_rate'] >= 75 %}text-success{% elif stats['attendance_rate'] >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ stats['attendance_rate'] }}%
                                 </span>
                             </div>
                             <div class="progress mt-2">
                                 <div class="progress-bar 
-                                    {% if stats.attendance_rate >= 75 %}
+                                    {% if stats['attendance_rate'] >= 75 %}
                                         bg-success
-                                    {% elif stats.attendance_rate >= 60 %}
+                                    {% elif stats['attendance_rate'] >= 60 %}
                                         bg-warning
                                     {% else %}
                                         bg-danger
                                     {% endif %}"
                                     role="progressbar" 
-                                    style="width: {{ stats.attendance_rate }}%" 
-                                    aria-valuenow="{{ stats.attendance_rate }}" 
+                                    style="width: {{ stats['attendance_rate'] }}%" 
+                                    aria-valuenow="{{ stats['attendance_rate'] }}" 
                                     aria-valuemin="0" 
                                     aria-valuemax="100">
                                 </div>
+                            </div>
+                            <div class="text-end mt-2">
+                                <span class="small text-muted">Average Attendance: <strong>{{ stats['attendance_rate'] }}%</strong></span>
                             </div>
                         </div>
                     </div>
@@ -217,10 +223,63 @@
                     {% if courses %}
                         <!-- Course Attendance Chart -->
                         <div style="height: 300px;">
-                            <canvas id="course-attendance-chart" 
-                                    data-courses="{{ [{'code': c.course_code, 'attendance': course_stats.get(c.id, {}).get('attendance_rate', 0)} for c in courses]|tojson }}">
-                            </canvas>
+                            <canvas id="course-attendance-chart"></canvas>
                         </div>
+                        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const ctx = document.getElementById('course-attendance-chart').getContext('2d');
+                            // Use course_data passed from Flask
+                            const courseData = {{ course_data | tojson }};
+                            const labels = courseData.map(item => item.code);
+                            const data = courseData.map(item => item.attendance);
+
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Average Attendance %',
+                                        data: data,
+                                        backgroundColor: data.map(val => {
+                                            if (val >= 75) return 'rgba(40, 167, 69, 0.5)';
+                                            if (val >= 60) return 'rgba(255, 193, 7, 0.5)';
+                                            return 'rgba(220, 53, 69, 0.5)';
+                                        }),
+                                        borderColor: data.map(val => {
+                                            if (val >= 75) return 'rgba(40, 167, 69, 1)';
+                                            if (val >= 60) return 'rgba(255, 193, 7, 1)';
+                                            return 'rgba(220, 53, 69, 1)';
+                                        }),
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            max: 100,
+                                            title: {
+                                                display: true,
+                                                text: 'Average Attendance Percentage'
+                                            }
+                                        },
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Course'
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: true
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        </script>
                     {% else %}
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i> No course data available. Add courses to view attendance statistics.

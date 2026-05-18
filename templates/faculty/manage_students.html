@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Students: {{ course.course_code }} - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ course.course_code }} - {{ course.title }}</h1>
+            <p class="text-muted">
+                <i class="fas fa-clock me-1"></i> {{ course.schedule }} |
+                <i class="fas fa-map-marker-alt me-1"></i> {{ course.classroom }} |
+                <i class="fas fa-wifi me-1"></i> Router: {{ course.router.name if course.router else 'Not assigned' }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Course
+            </a>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Add Student Form -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Add New Student</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_students', course_id=course.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.student_id.label }}</label>
+                            {{ form.student_id(class="form-control", placeholder="e.g., S12345") }}
+                            <div class="form-text">Enter the student's unique ID</div>
+                            {% for error in form.student_id.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enrolled Students -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Enrolled Students</h5>
+                    <span class="badge bg-primary">{{ enrolled_students|length }} Students</span>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_students %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Year</th>
+                                        <th>Phone</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in enrolled_students %}
+                                        <tr>
+                                            <td>{{ student.student_id }}</td>
+                                            <td>{{ student.user.first_name }} {{ student.user.last_name }}</td>
+                                            <td>{{ student.department }}</td>
+                                            <td>{{ student.year }}</td>
+                                            <td>{{ student.phone }}</td>
+                                            <td>
+                                                <form action="{{ url_for('manage_students', course_id=course.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to unenroll this student? This will remove their attendance records for this course.');">
+                                                    <input type="hidden" name="unenroll_student_id" value="{{ student.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-user-minus me-1"></i> Unenroll
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No students enrolled in this course yet. Use the form on the left to add students.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Student Management Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Student Management Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Adding Students:</strong> Enter the student’s unique ID to enroll them. Ensure the ID matches an existing student in the system.</li>
+                        <li><strong>Unenrolling Students:</strong> Unenrolling a student will remove their attendance records for this course. This action cannot be undone.</li>
+                        <li><strong>Verify Enrollment:</strong> After adding a student, ensure they appear in the list and can mark attendance for sessions.</li>
+                        <li><strong>Attendance Impact:</strong> Check the course’s attendance reports after making changes to ensure accuracy.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

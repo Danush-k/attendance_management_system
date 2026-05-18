@@ -10,7 +10,7 @@
             <p class="text-muted">
                 <i class="fas fa-clock me-1"></i> {{ course.schedule }} |
                 <i class="fas fa-map-marker-alt me-1"></i> {{ course.classroom }} |
-                <i class="fas fa-wifi me-1"></i> Router: {{ course.router.name }}
+                <i class="fas fa-wifi me-1"></i> Router: {{ course.router.name if course.router else 'Not assigned' }}
             </p>
         </div>
         <div class="col-md-4 text-end">
@@ -129,12 +129,63 @@
                                             </td>
                                             <td class="session-actions">
                                                 <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#attendance-{{ session.id }}" aria-expanded="false" aria-controls="attendance-{{ session.id }}" title="View/Edit Attendance">
+                                                        <i class="fas fa-users"></i>
+                                                    </button>
                                                     <a href="{{ url_for('generate_otp', session_id=session.id) }}" class="btn btn-outline-primary" title="Generate OTP">
                                                         <i class="fas fa-key"></i>
                                                     </a>
                                                     <button class="btn btn-outline-secondary cancel-class" data-session-id="{{ session.id }}" title="Cancel Class" {% if session.status == 'cancelled' %}disabled{% endif %}>
                                                         <i class="fas fa-times"></i>
                                                     </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <!-- Collapsible Attendance Section -->
+                                        <tr>
+                                            <td colspan="6" class="p-0">
+                                                <div class="collapse" id="attendance-{{ session.id }}">
+                                                    <div class="card card-body border-0">
+                                                        <h6>Attendance for {{ session.date.strftime('%d-%m-%Y') }}</h6>
+                                                        <form method="POST" action="{{ url_for('update_attendance', session_id=session.id) }}">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Student ID</th>
+                                                                            <th>Name</th>
+                                                                            <th>Status</th>
+                                                                            <th>Notes</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {% for student in students %}
+                                                                            {% set attendance = session_attendance[session.id][student.id] %}
+                                                                            <tr>
+                                                                                <td>{{ student.student_id }}</td>
+                                                                                <td>{{ student.user.first_name }} {{ student.user.last_name }}</td>
+                                                                                <td>
+                                                                                    <select name="status_{{ student.id }}" class="form-select form-select-sm">
+                                                                                        <option value="present" {% if attendance.status == 'present' %}selected{% endif %}>Present</option>
+                                                                                        <option value="absent" {% if attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                                                                                        <option value="late" {% if attendance.status == 'late' %}selected{% endif %}>Late</option>
+                                                                                    </select>
+                                                                                </td>
+                                                                                <td>
+                                                                                    {% if attendance.notes %}
+                                                                                        <small class="text-muted">{{ attendance.notes }}</small>
+                                                                                    {% endif %}
+                                                                                </td>
+                                                                            </tr>
+                                                                        {% endfor %}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                            <div class="d-grid gap-2">
+                                                                <button type="submit" class="btn btn-primary btn-sm">Update Attendance</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -163,6 +214,7 @@
                         <li>Share the generated OTP with students, who must also be physically present.</li>
                         <li>Students must enter the OTP within the time limit (15 minutes) to mark attendance.</li>
                         <li>If class is cancelled, click the X icon to automatically mark all students present.</li>
+                        <li>Click the users icon to manually edit attendance statuses for each student.</li>
                     </ol>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i> OTPs expire after 15 minutes for security reasons.
@@ -176,10 +228,15 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Enrolled Students</h5>
-                    <span class="badge bg-primary">{{ students|length }} Students</span>
+                    <div>
+                        <span class="badge bg-primary me-2">{{ students|length }} Students</span>
+                        <a href="{{ url_for('manage_students', course_id=course.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-users-cog me-1"></i> Manage
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    {% if students %}
+                    {% if students and students|length > 0 %}
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
@@ -188,6 +245,7 @@
                                         <th>Name</th>
                                         <th>Attendance</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -224,6 +282,13 @@
                                                     <span class="badge bg-success">Good</span>
                                                 {% endif %}
                                             </td>
+                                            <td>
+                                                <form method="POST" action="{{ url_for('remove_student_from_course', course_id=course.id, student_id=student.id) }}" style="display:inline;">
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this student from the course?');">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -231,7 +296,12 @@
                         </div>
                     {% else %}
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i> No students enrolled in this course yet.
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% if students|length == 0 %}
+                                No students enrolled in this course yet. Use the <b>Manage</b> button above to add students.
+                            {% else %}
+                                No student data available.
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
@@ -248,21 +318,22 @@
                         {% set total_possible = students|length * sessions|length %}
                         {% set total_present = 0 %}
                         {% for student in students %}
-                            {% set total_present = total_present + attendance_data.get(student.id, {}).get('present', 0) %}
+                            {% for session in sessions %}
+                                {% set attendance = session_attendance[session.id][student.id] %}
+                                {% if attendance and attendance.status == 'present' %}
+                                    {% set total_present = total_present + 1 %}
+                                {% endif %}
+                            {% endfor %}
                         {% endfor %}
                         {% set course_rate = (total_present / total_possible * 100) if total_possible > 0 else 0 %}
                         
                         <div class="text-center mb-4">
-                            <div class="display-6 mb-2">{{ course_rate|round(1) }}%</div>
+                            <!--<div class="display-6 mb-2">{{ course_rate|round(1) }}%</div>-->
                             <p class="text-muted">Overall Course Attendance</p>
                         </div>
                         
                         <div class="mb-3">
                             <h6>Attendance Distribution</h6>
-                            {% set high_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 75)|list|length %}
-                            {% set medium_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) >= 60 and attendance_data.get(id, {}).get('percentage', 0) < 75)|list|length %}
-                            {% set low_count = students|selectattr("id", "in", attendance_data.keys())|selectattr("id", "filter", lambda id: attendance_data.get(id, {}).get('percentage', 0) < 60)|list|length %}
-                            
                             <div class="progress mb-2" style="height: 20px;">
                                 {% if students|length > 0 %}
                                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ (high_count / students|length * 100)|round(1) }}%" aria-valuenow="{{ high_count }}" aria-valuemin="0" aria-valuemax="{{ students|length }}">
@@ -297,4 +368,35 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Cancel Class -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.cancel-class').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Are you sure you want to cancel this class? All students will be marked as present.')) {
+                fetch(`/faculty/cancel_class/${this.dataset.sessionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while cancelling the class.');
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

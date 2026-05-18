@@ -98,9 +98,8 @@
                                             <td>{{ session.session.start_time.strftime('%H:%M') }} - {{ session.session.end_time.strftime('%H:%M') }}</td>
                                             <td>{{ session.session.topic or 'N/A' }}</td>
                                             <td>
-                                                {% set remaining = (session.otp.expiration - now).total_seconds() // 60 %}
-                                                {% if remaining > 0 %}
-                                                    <span class="text-success">{{ remaining|int }} minutes</span>
+                                                {% if session.remaining_minutes > 0 %}
+                                                    <span class="text-success">{{ session.remaining_minutes }} minutes</span>
                                                 {% else %}
                                                     <span class="text-danger">Expiring soon!</span>
                                                 {% endif %}
@@ -135,4 +134,82 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips for calendar days
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Get DOM elements
+        const courseSelect = document.getElementById('course-select');
+        const routerIdInput = document.getElementById('router_id');
+        const submitButton = document.getElementById('submit-attendance');
+        const locationStatus = document.getElementById('location-status');
+
+        // Function to validate location
+        function validateLocation(courseId, routerId) {
+            fetch('/api/validate_router', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    course_id: courseId,
+                    router_id: routerId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    locationStatus.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> Location validated. You can now mark attendance.
+                        </div>
+                    `;
+                    submitButton.disabled = false;
+                } else {
+                    locationStatus.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i> ${data.message}
+                        </div>
+                    `;
+                    submitButton.disabled = true;
+                }
+            })
+            .catch(error => {
+                locationStatus.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i> Error validating location. Please try again.
+                    </div>
+                `;
+                submitButton.disabled = true;
+                console.error('Error:', error);
+            });
+        }
+
+        // Update router_id and validate location on course selection
+        courseSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const courseId = selectedOption.value;
+            const routerId = selectedOption.getAttribute('data-router-id');
+
+            if (courseId && routerId) {
+                routerIdInput.value = routerId;
+                validateLocation(courseId, routerId);
+            } else {
+                locationStatus.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Please select a course to validate your location.
+                    </div>
+                `;
+                submitButton.disabled = true;
+            }
+        });
+    });
+</script>
 {% endblock %}
