@@ -58,13 +58,16 @@ instance/
 ehthumbs.db
 Thumbs.db
 
-# Generated Images
+# Generated Images (but allow diagrams in docs)
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.bmp
 static/images/generated/
+
+# Exception: Allow documentation diagrams
+!docs/diagrams/*.png
 
 # Flask
 instance/
