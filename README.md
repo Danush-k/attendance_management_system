@@ -262,7 +262,39 @@ The application will be available at: `http://localhost:5005`
 8. Low attendance warning email sent (if <75%)
 ```
 
-## 📈 Key Utilities
+## � System Diagrams
+
+### Architecture Diagram
+
+This diagram illustrates the complete system architecture with all components and their interactions:
+
+![Attendance Management System Architecture](docs/diagrams/architecture-diagram.png)
+
+**Components:**
+- **Frontend**: Student and Staff interfaces (HTML/CSS/JavaScript)
+- **Attendance Management System**: Core application logic (Flask)
+- **Database**: Stores login credentials, student data, attendance records, and router IDs
+- **Backend Services**: Router detection and location-based verification
+- **OTP & Fingerprint Verification**: Security mechanisms for authentication
+- **WiFi Router**: Physical location detection for proxy elimination
+
+### Sequence Diagram
+
+This sequence diagram shows the step-by-step attendance marking process:
+
+![Attendance Process Sequence Diagram](docs/diagrams/sequence-diagram.png)
+
+**Flow:**
+1. **Staff/Faculty Authentication**: Faculty member initiates attendance session
+2. **Student Verification**: System identifies the student
+3. **OTP & Fingerprint Verification**: Multi-layer security validation
+   - OTP verification
+   - Router location verification
+4. **Successful/Failed Verification**: System processes verification result
+5. **Database Update**: Attendance data persisted to database
+6. **Reflection**: Updates reflected on both student and faculty dashboards
+
+## �📈 Key Utilities
 
 ### OTP Generation
 ```python
